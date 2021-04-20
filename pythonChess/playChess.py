@@ -45,11 +45,17 @@ def generateLegalMoves(board, rank, file):
         if board[rank][file].upper() == 'R':
             for i in range(1, 8):
                 for k in [rank+i, rank-i]:
-                    if k in range(8):
-                        legalMoves.append((k, file))
+                    if 0 <= k <= 7:
+                        if board[k][file] is None:
+                            legalMoves.append((k, file))
+                        elif board[k][file].isupper() != board[rank][file].isupper():
+                            legalMoves.append((k, file))
                 for k in [file+i, file-i]:
-                    if k in range(8):
-                        legalMoves.append((rank, k))
+                    if 0 <= k <= 7:
+                        if board[rank][k] is None:
+                            legalMoves.append((rank, k))
+                        elif board[rank][k].isupper() != board[rank][file].isupper():
+                            legalMoves.append((rank, k))
     return legalMoves
 
 
@@ -80,7 +86,7 @@ def draw_drag(screen, board, selected_piece):
         pos = pygame.Vector2(pygame.mouse.get_pos())
         image = pygame.image.load(pieceImages[selected_piece[0]])
         screen.blit(image, image.get_rect(center=pos))
-        return x, y
+        return y, x
 
 
 def loadFromFEN(FEN, board):
@@ -122,7 +128,7 @@ def main():
                     if drop_pos in legalMoves:
                         piece, old_x, old_y = selected_piece
                         board[old_y][old_x] = None
-                        new_x, new_y = drop_pos
+                        new_y, new_x = drop_pos
                         board[new_y][new_x] = piece
                 selected_piece = None
                 drop_pos = None
