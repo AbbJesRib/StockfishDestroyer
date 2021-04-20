@@ -39,6 +39,20 @@ def create_board():
     return board
 
 
+def generateLegalMoves(board, rank, file):
+    legalMoves = []
+    if type(board[rank][file]) is str:
+        if board[rank][file].upper() == 'R':
+            for i in range(1, 8):
+                for k in [rank+i, rank-i]:
+                    if k in range(8):
+                        legalMoves.append((k, file))
+                for k in [file+i, file-i]:
+                    if k in range(8):
+                        legalMoves.append((rank, k))
+    return legalMoves
+
+
 def draw_pieces(screen, board, selected_piece):
     sx, sy = None, None
     if selected_piece:
@@ -63,10 +77,6 @@ def draw_selector(screen, piece, x, y):
 def draw_drag(screen, board, selected_piece):
     if selected_piece:
         piece, x, y = get_square_under_mouse(board)
-        if x is not None:
-            rect = (BOARD_POS[0] + x * TILESIZE, BOARD_POS[1] + y * TILESIZE, TILESIZE, TILESIZE)
-            pygame.draw.rect(screen, (0, 255, 0, 50), rect, 2)
-
         pos = pygame.Vector2(pygame.mouse.get_pos())
         image = pygame.image.load(pieceImages[selected_piece[0]])
         screen.blit(image, image.get_rect(center=pos))
@@ -108,10 +118,12 @@ def main():
                     selected_piece = piece, x, y
             if e.type == pygame.MOUSEBUTTONUP:
                 if drop_pos:
-                    piece, old_x, old_y = selected_piece
-                    board[old_y][old_x] = None
-                    new_x, new_y = drop_pos
-                    board[new_y][new_x] = piece
+                    legalMoves = generateLegalMoves(board, selected_piece[2], selected_piece[1])
+                    if drop_pos in legalMoves:
+                        piece, old_x, old_y = selected_piece
+                        board[old_y][old_x] = None
+                        new_x, new_y = drop_pos
+                        board[new_y][new_x] = piece
                 selected_piece = None
                 drop_pos = None
 
