@@ -124,8 +124,7 @@ def generateLegalMovesForPiece(board, rank, file):
                     else:
                         bannedDirections.append(directions.index((y, x)))
 
-                directions = [i for i in directions if directions.index(i) not in bannedDirections]
-                legalMoves += directions
+                legalMoves += [i for i in directions if directions.index(i) not in bannedDirections]
         elif board[rank][file].upper() == 'B':
             bannedDirections = []
             for i in range(1, 8):
@@ -143,8 +142,7 @@ def generateLegalMovesForPiece(board, rank, file):
                     else:
                         bannedDirections.append(directions.index((y, x)))
 
-                directions = [i for i in directions if directions.index(i) not in bannedDirections]
-                legalMoves += directions
+                legalMoves += [i for i in directions if directions.index(i) not in bannedDirections]
         elif board[rank][file].upper() == 'Q':
             bannedDirections = []
             for i in range(1, 8):
@@ -163,8 +161,7 @@ def generateLegalMovesForPiece(board, rank, file):
                     else:
                         bannedDirections.append(directions.index((y, x)))
 
-                directions = [i for i in directions if directions.index(i) not in bannedDirections]
-                legalMoves += directions
+                legalMoves += [i for i in directions if directions.index(i) not in bannedDirections]
         elif board[rank][file].upper() == 'K':
             bannedDirections = []
             directions = [(rank + 1, file + 1), (rank - 1, file + 1), (rank + 1, file - 1),
@@ -180,6 +177,43 @@ def generateLegalMovesForPiece(board, rank, file):
                         bannedDirections.append(directions.index((y, x)))
             directions = [i for i in directions if directions.index(i) not in bannedDirections]
             legalMoves += [i for i in directions if i not in generateLegalMovesForColor(board, board[rank][file].islower())]
+        elif board[rank][file].upper() == 'N':
+            bannedDirections = []
+            directions = [(rank + 2, file + 1), (rank + 2, file - 1), (rank - 2, file + 1),
+                          (rank - 2, file - 1), (rank + 1, file + 2), (rank + 1, file - 2), (rank - 1, file + 2),
+                          (rank - 1, file - 2)]
+            for y, x in directions:
+                if 0 <= x <= 7 and 0 <= y <= 7:
+                    if board[y][x] is None:
+                        pass
+                    else:
+                        if board[rank][file].isupper() != board[y][x].isupper():
+                            legalMoves.append((y, x))
+                        bannedDirections.append(directions.index((y, x)))
+            legalMoves += [i for i in directions if directions.index(i) not in bannedDirections]
+        elif board[rank][file].upper() == 'P':
+            directions = []
+            if board[rank][file].isupper():
+                if 0 <= rank - 1 <= 7:
+                    if board[rank - 1][file] is None:
+                        directions.append((rank - 1, file))
+                        if rank == 6 and board[rank - 2][file] is None:
+                            directions.append((rank - 2, file))
+                    for i in range(2):
+                        if board[rank - 1][file + (-1)**i] is not None:
+                            if board[rank][file].isupper() != board[rank - 1][file + (-1)**i].isupper():
+                                directions.append((rank - 1, file + (-1)**i))
+            else:
+                if 0 <= rank + 1 <= 7:
+                    if board[rank + 1][file] is None:
+                        directions.append((rank + 1, file))
+                        if rank == 1 and board[rank + 2][file] is None:
+                            directions.append((rank + 2, file))
+                    for i in range(2):
+                        if board[rank + 1][file + (-1)**i] is not None:
+                            if board[rank][file].isupper() != board[rank + 1][file + (-1)**i].isupper():
+                                directions.append((rank + 1, file + (-1)**i))
+            legalMoves += directions
     return legalMoves
 
 
