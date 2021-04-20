@@ -1,7 +1,7 @@
 import pygame
 from pieceData import pieceImages
 
-startingFen = "rnbqkbnr/pppppppp/8/8/8/8/1PPPPPPP/RNBQKBNR"
+startingFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 
 TILESIZE = 95
 BOARD_POS = (580, 160)
@@ -43,65 +43,7 @@ def generateLegalMovesForColor(board, isWhite):
     legalMoves = []
     for rank in range(8):
         for file in range(8):
-            if type(board[rank][file]) is str:
-                if board[rank][file].isupper() == isWhite:
-                    if board[rank][file].upper() == 'R':
-                        bannedDirections = []
-                        for i in range(1, 8):
-                            directions = [(rank + i, file), (rank - i, file), (rank, file + i), (rank, file - i)]
-                            for y, x in directions:
-                                if 0 <= x <= 7 and 0 <= y <= 7:
-                                    if board[y][x] is None:
-                                        pass
-                                    else:
-                                        if board[rank][file].isupper() != board[y][x].isupper() and directions.index(
-                                                (y, x)) not in bannedDirections:
-                                            legalMoves.append((y, x))
-                                        bannedDirections.append(directions.index((y, x)))
-                                else:
-                                    bannedDirections.append(directions.index((y, x)))
-
-                            directions = [i for i in directions if directions.index(i) not in bannedDirections]
-                            legalMoves += directions
-                    elif board[rank][file].upper() == 'B':
-                        bannedDirections = []
-                        for i in range(1, 8):
-                            directions = [(rank + i, file + i), (rank - i, file + i), (rank + i, file - i),
-                                          (rank - i, file - i)]
-                            for y, x in directions:
-                                if 0 <= x <= 7 and 0 <= y <= 7:
-                                    if board[y][x] is None:
-                                        pass
-                                    else:
-                                        if board[rank][file].isupper() != board[y][x].isupper() and directions.index(
-                                                (y, x)) not in bannedDirections:
-                                            legalMoves.append((y, x))
-                                        bannedDirections.append(directions.index((y, x)))
-                                else:
-                                    bannedDirections.append(directions.index((y, x)))
-
-                            directions = [i for i in directions if directions.index(i) not in bannedDirections]
-                            legalMoves += directions
-                    elif board[rank][file].upper() == 'Q':
-                        bannedDirections = []
-                        for i in range(1, 8):
-                            directions = [(rank + i, file + i), (rank - i, file + i), (rank + i, file - i),
-                                          (rank - i, file - i), (rank + i, file), (rank - i, file), (rank, file + i),
-                                          (rank, file - i)]
-                            for y, x in directions:
-                                if 0 <= x <= 7 and 0 <= y <= 7:
-                                    if board[y][x] is None:
-                                        pass
-                                    else:
-                                        if board[rank][file].isupper() != board[y][x].isupper() and directions.index(
-                                                (y, x)) not in bannedDirections:
-                                            legalMoves.append((y, x))
-                                        bannedDirections.append(directions.index((y, x)))
-                                else:
-                                    bannedDirections.append(directions.index((y, x)))
-
-                            directions = [i for i in directions if directions.index(i) not in bannedDirections]
-                            legalMoves += directions
+            generateLegalMovesForPiece(board, rank, file)
     return legalMoves
 
 
