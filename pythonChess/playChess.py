@@ -165,6 +165,21 @@ def generateLegalMovesForPiece(board, rank, file):
 
                 directions = [i for i in directions if directions.index(i) not in bannedDirections]
                 legalMoves += directions
+        elif board[rank][file].upper() == 'K':
+            bannedDirections = []
+            directions = [(rank + 1, file + 1), (rank - 1, file + 1), (rank + 1, file - 1),
+                          (rank - 1, file - 1), (rank + 1, file), (rank - 1, file), (rank, file + 1),
+                          (rank, file - 1)]
+            for y, x in directions:
+                if 0 <= x <= 7 and 0 <= y <= 7:
+                    if board[y][x] is None:
+                        pass
+                    else:
+                        if board[rank][file].isupper() != board[y][x].isupper():
+                            legalMoves.append((y, x))
+                        bannedDirections.append(directions.index((y, x)))
+            directions = [i for i in directions if directions.index(i) not in bannedDirections]
+            legalMoves += [i for i in directions if i not in generateLegalMovesForColor(board, board[rank][file].islower())]
     return legalMoves
 
 
