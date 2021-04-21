@@ -1,4 +1,5 @@
 import pygame
+from copy import deepcopy
 from pieceData import pieceImages
 
 startingFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
@@ -39,12 +40,118 @@ def create_board():
     return board
 
 
-def generateLegalMovesForColor(board, isWhite):
+def seeCheck(board, before, after):
     legalMoves = []
+    newBoard = deepcopy(board)
+    newBoard[after[0]][after[1]] = board[before[0]][before[1]]
+    newBoard[before[0]][before[1]] = None
+    kingSquare = None
     for rank in range(8):
         for file in range(8):
-            generateLegalMovesForPiece(board, rank, file)
-    return legalMoves
+            if type(newBoard[rank][file]) is str:
+                if newBoard[rank][file].isupper() == newBoard[after[0]][after[1]].islower():
+                    if newBoard[rank][file].upper() == 'R':
+                        bannedDirections = []
+                        for i in range(1, 8):
+                            directions = [(rank + i, file), (rank - i, file), (rank, file + i), (rank, file - i)]
+                            for y, x in directions:
+                                if 0 <= x <= 7 and 0 <= y <= 7:
+                                    if newBoard[y][x] is None:
+                                        pass
+                                    else:
+                                        if directions.index((y, x)) not in bannedDirections:
+                                            legalMoves.append((y, x))
+                                        bannedDirections.append(directions.index((y, x)))
+                                else:
+                                    bannedDirections.append(directions.index((y, x)))
+
+                            legalMoves += [i for i in directions if directions.index(i) not in bannedDirections]
+                    elif newBoard[rank][file].upper() == 'B':
+                        bannedDirections = []
+                        for i in range(1, 8):
+                            directions = [(rank + i, file + i), (rank - i, file + i), (rank + i, file - i),
+                                          (rank - i, file - i)]
+                            for y, x in directions:
+                                if 0 <= x <= 7 and 0 <= y <= 7:
+                                    if newBoard[y][x] is None:
+                                        pass
+                                    else:
+                                        if directions.index((y, x)) not in bannedDirections:
+                                            legalMoves.append((y, x))
+                                        bannedDirections.append(directions.index((y, x)))
+                                else:
+                                    bannedDirections.append(directions.index((y, x)))
+
+                            legalMoves += [i for i in directions if directions.index(i) not in bannedDirections]
+                    elif newBoard[rank][file].upper() == 'Q':
+                        bannedDirections = []
+                        for i in range(1, 8):
+                            directions = [(rank + i, file + i), (rank - i, file + i), (rank + i, file - i),
+                                          (rank - i, file - i), (rank + i, file), (rank - i, file), (rank, file + i),
+                                          (rank, file - i)]
+                            for y, x in directions:
+                                if 0 <= x <= 7 and 0 <= y <= 7:
+                                    if newBoard[y][x] is None:
+                                        pass
+                                    else:
+                                        if directions.index((y, x)) not in bannedDirections:
+                                            legalMoves.append((y, x))
+                                        bannedDirections.append(directions.index((y, x)))
+                                else:
+                                    bannedDirections.append(directions.index((y, x)))
+
+                            legalMoves += [i for i in directions if directions.index(i) not in bannedDirections]
+                    elif newBoard[rank][file].upper() == 'K':
+                        bannedDirections = []
+                        directions = [(rank + 1, file + 1), (rank - 1, file + 1), (rank + 1, file - 1),
+                                      (rank - 1, file - 1), (rank + 1, file), (rank - 1, file), (rank, file + 1),
+                                      (rank, file - 1)]
+                        for y, x in directions:
+                            if 0 <= x <= 7 and 0 <= y <= 7:
+                                pass
+                            else:
+                                bannedDirections.append(directions.index((y, x)))
+                        legalMoves += [i for i in directions if directions.index(i) not in bannedDirections]
+                    elif newBoard[rank][file].upper() == 'N':
+                        directions = [(rank + 2, file + 1), (rank + 2, file - 1), (rank - 2, file + 1),
+                                      (rank - 2, file - 1), (rank + 1, file + 2), (rank + 1, file - 2),
+                                      (rank - 1, file + 2), (rank - 1, file - 2)]
+                        directions = [(y, x) for y, x in directions if (0 <= x <= 7) and (0 <= y <= 7)]
+                        legalMoves += directions
+                    elif newBoard[rank][file].upper() == 'P':
+                        directions = []
+                        if newBoard[rank][file].isupper():
+                            if 0 <= rank - 1 <= 7:
+                                if newBoard[rank - 1][file] is None:
+                                    directions.append((rank - 1, file))
+                                    if rank == 6 and newBoard[rank - 2][file] is None:
+                                        directions.append((rank - 2, file))
+                                for i in range(2):
+                                    if 0 <= file + (-1) ** i <= 7:
+                                        if newBoard[rank - 1][file + (-1) ** i] is not None:
+                                            if newBoard[rank - 1][file + (-1) ** i].isupper() != newBoard[rank][file].isupper():
+                                                directions.append((rank - 1, file + (-1) ** i))
+                        else:
+                            if 0 <= rank + 1 <= 7:
+                                if newBoard[rank + 1][file] is None:
+                                    directions.append((rank + 1, file))
+                                    if rank == 1 and newBoard[rank + 2][file] is None:
+                                        directions.append((rank + 2, file))
+                                for i in range(2):
+                                    if 0 <= file + (-1)**i <= 7:
+                                        if newBoard[rank + 1][file + (-1)**i] is not None:
+                                            if newBoard[rank + 1][file + (-1)**i].isupper() != newBoard[rank][file].isupper():
+                                                directions.append((rank + 1, file + (-1)**i))
+                        legalMoves += directions
+    for rank in range(8):
+        for file in range(8):
+            if type(newBoard[rank][file]) is str:
+                if newBoard[rank][file].isupper() == newBoard[after[0]][after[1]].isupper() and newBoard[rank][file].upper() == 'K':
+                    kingSquare = (rank, file)
+                    break
+        if kingSquare is not None:
+            break
+    return kingSquare in legalMoves
 
 
 def generateLegalMovesForPiece(board, rank, file):
@@ -117,8 +224,9 @@ def generateLegalMovesForPiece(board, rank, file):
                         if board[rank][file].isupper() != board[y][x].isupper():
                             legalMoves.append((y, x))
                         bannedDirections.append(directions.index((y, x)))
-            directions = [i for i in directions if directions.index(i) not in bannedDirections]
-            legalMoves += [i for i in directions if i not in generateLegalMovesForColor(board, board[rank][file].islower())]
+                else:
+                    bannedDirections.append(directions.index((y, x)))
+            legalMoves += [i for i in directions if directions.index(i) not in bannedDirections]
         elif board[rank][file].upper() == 'N':
             bannedDirections = []
             directions = [(rank + 2, file + 1), (rank + 2, file - 1), (rank - 2, file + 1),
@@ -132,6 +240,8 @@ def generateLegalMovesForPiece(board, rank, file):
                         if board[rank][file].isupper() != board[y][x].isupper():
                             legalMoves.append((y, x))
                         bannedDirections.append(directions.index((y, x)))
+                else:
+                    bannedDirections.append(directions.index((y, x)))
             legalMoves += [i for i in directions if directions.index(i) not in bannedDirections]
         elif board[rank][file].upper() == 'P':
             directions = []
@@ -141,22 +251,49 @@ def generateLegalMovesForPiece(board, rank, file):
                         directions.append((rank - 1, file))
                         if rank == 6 and board[rank - 2][file] is None:
                             directions.append((rank - 2, file))
-                    for i in range(2):
-                        if board[rank - 1][file + (-1)**i] is not None:
-                            if board[rank][file].isupper() != board[rank - 1][file + (-1)**i].isupper():
-                                directions.append((rank - 1, file + (-1)**i))
+                    if 0 <= file - 1 <= 7:
+                        if board[rank - 1][file - 1] is not None:
+                            if board[rank][file].isupper() != board[rank - 1][file - 1].isupper():
+                                directions.append((rank - 1, file - 1))
+                    if 0 <= file + 1 <= 7:
+                        if board[rank - 1][file + 1] is not None:
+                            if board[rank][file].isupper() != board[rank - 1][file + 1].isupper():
+                                directions.append((rank - 1, file + 1))
             else:
                 if 0 <= rank + 1 <= 7:
                     if board[rank + 1][file] is None:
                         directions.append((rank + 1, file))
                         if rank == 1 and board[rank + 2][file] is None:
                             directions.append((rank + 2, file))
-                    for i in range(2):
-                        if board[rank + 1][file + (-1)**i] is not None:
-                            if board[rank][file].isupper() != board[rank + 1][file + (-1)**i].isupper():
-                                directions.append((rank + 1, file + (-1)**i))
+                    if 0 <= file - 1 <= 7:
+                        if board[rank + 1][file - 1] is not None:
+                            if board[rank][file].isupper() != board[rank + 1][file - 1].isupper():
+                                directions.append((rank + 1, file - 1))
+                    if 0 <= file + 1 <= 7:
+                        if board[rank + 1][file + 1] is not None:
+                            if board[rank][file].isupper() != board[rank + 1][file + 1].isupper():
+                                directions.append((rank + 1, file + 1))
             legalMoves += directions
+        legalMoves = [i for i in legalMoves if not seeCheck(board, (rank, file), i)]
     return legalMoves
+
+
+def generateLegalMovesForColor(board, isWhite):
+    legalMoves = []
+    for rank in range(8):
+        for file in range(8):
+            if board[rank][file] is not None:
+                if board[rank][file].isupper() == isWhite:
+                    legalMoves += generateLegalMovesForPiece(board, rank, file)
+    return legalMoves
+
+
+def spotKing(board, isWhite):
+    for rank in range(8):
+        for file in range(8):
+            if board[rank][file] is not None:
+                if board[rank][file].isupper() == isWhite and board[rank][file].upper() == 'K':
+                    return rank, file
 
 
 def draw_pieces(screen, board, selected_piece):
@@ -206,6 +343,7 @@ def loadFromFEN(FEN, board):
 
 def main():
     pygame.init()
+    font = pygame.font.SysFont('', 32)
     screen = pygame.display.set_mode((1920, 1000))
     board = create_board()
     loadFromFEN(startingFen, board)
@@ -213,6 +351,7 @@ def main():
     clock = pygame.time.Clock()
     selected_piece = None
     drop_pos = None
+    whitesTurn = True
     while True:
         events = pygame.event.get()
         piece, x, y = get_square_under_mouse(board)
@@ -224,15 +363,25 @@ def main():
                     selected_piece = piece, x, y
             if e.type == pygame.MOUSEBUTTONUP:
                 if drop_pos:
-                    legalMoves = generateLegalMovesForPiece(board, selected_piece[2], selected_piece[1])
-                    if drop_pos in legalMoves:
-                        piece, old_x, old_y = selected_piece
-                        board[old_y][old_x] = None
-                        new_y, new_x = drop_pos
-                        board[new_y][new_x] = piece
+                    if selected_piece[0].isupper() == whitesTurn:
+                        legalMoves = generateLegalMovesForPiece(board, selected_piece[2], selected_piece[1])
+                        if drop_pos in legalMoves:
+                            piece, old_x, old_y = selected_piece
+                            board[old_y][old_x] = None
+                            new_y, new_x = drop_pos
+                            board[new_y][new_x] = piece
+                            whitesTurn = not whitesTurn
                 selected_piece = None
                 drop_pos = None
 
+        if len(generateLegalMovesForColor(board, whitesTurn)) == 0:
+            if spotKing(board, whitesTurn) in generateLegalMovesForColor(board, not whitesTurn):
+                endText = font.render('Checkmate! Black has won!' if whitesTurn else 'Checkmate! White has won!', True, 'black')
+            else:
+                endText = font.render("Stalemate! It's a draw!", True, 'black')
+            textRect = endText.get_rect()
+            textRect.center = (1920 // 2, 1000 // 2)
+            screen.blit(endText, textRect)
         screen.fill(pygame.Color('black'))
         screen.blit(board_surf, BOARD_POS)
         draw_pieces(screen, board, selected_piece)
