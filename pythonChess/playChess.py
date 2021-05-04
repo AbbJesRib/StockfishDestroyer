@@ -1,7 +1,8 @@
 import pygame
 from pieceData import pieceImages
-from chessRules import moveHistory, checkEnPassant, checkPossibleCastle, generateLegalMovesForColor, generateLegalMovesForPiece, makeCastleMove, spotKing
-from chessAI import makeRandomMove, evaluateBoard
+from chessRules import generateLegalMovesForColor, spotKing, endTurn
+from chessAI import makeRandomMove, search
+
 
 TILESIZE = 95
 BOARD_POS = (580, 160)
@@ -145,25 +146,10 @@ def main():
             if e.type == pygame.MOUSEBUTTONUP:
                 if drop_pos:
                     if selected_piece[0].isupper() == whitesTurn:
-                        legalMoves = generateLegalMovesForPiece(board, selected_piece[2], selected_piece[1])
-                        if drop_pos in legalMoves:
-                            if drop_pos in checkPossibleCastle(board, whitesTurn):
-                                makeCastleMove(board, drop_pos[0], drop_pos[1])
-                            else:
-                                try:
-                                    if drop_pos in checkEnPassant(board, selected_piece[2], selected_piece[1]):
-                                        board[selected_piece[2]][drop_pos[1]] = None
-                                except IndexError:
-                                    pass
-                                piece, old_x, old_y = selected_piece
-                                board[old_y][old_x] = None
-                                new_y, new_x = drop_pos
-                                board[new_y][new_x] = piece
-                            moveHistory.append([(selected_piece[2], selected_piece[1]), (drop_pos[0], drop_pos[1])])
-                            boardHistory.append(loadFENFromBoard(board))
-                            whitesTurn = not whitesTurn
+                        whitesTurn = endTurn(board, (selected_piece[2], selected_piece[1]), drop_pos, playerisWhite, whitesTurn, None)
                 selected_piece = None
                 drop_pos = None
+
         if len(generateLegalMovesForColor(board, whitesTurn)) == 0:
             gameEnd = True
             kingPos = spotKing(board, whitesTurn)
@@ -183,12 +169,9 @@ def main():
             gameEnd = True
 
         if whitesTurn != playerisWhite and not gameEnd:
-            print(evaluateBoard(board))
-            before, after = makeRandomMove(board, whitesTurn)
-            piece = board[before[0]][before[1]]
-            board[before[0]][before[1]] = None
-            board[after[0]][after[1]] = piece
-            whitesTurn = not whitesTurn
+            print(search(board, 3, not playerisWhite, float('-inf'), float('inf')))
+            before, after, AIProm = makeRandomMove(board, whitesTurn)
+            whitesTurn = endTurn(board, before, after, not playerisWhite, whitesTurn, AIProm)
         screen.fill(pygame.Color('black'))
         screen.blit(board_surf, BOARD_POS)
         draw_pieces(screen, board, selected_piece)

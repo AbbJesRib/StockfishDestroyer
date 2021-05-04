@@ -1,4 +1,5 @@
 from copy import deepcopy
+import pygame
 moveHistory = []
 
 
@@ -297,7 +298,15 @@ def generateLegalMovesForColor(board, isWhite):
         for file in range(8):
             if board[rank][file] is not None:
                 if board[rank][file].isupper() == isWhite:
-                    legalMoves += [[(rank, file), i] for i in generateLegalMovesForPiece(board, rank, file)]
+                    if board[rank][file].upper() == 'P' and rank == 6**int(not isWhite):
+                        if isWhite:
+                            promotions = ['Q', 'R', 'B', 'N']
+                        else:
+                            promotions = ['q', 'r', 'b', 'n']
+                        for prom in promotions:
+                            legalMoves += [[(rank, file), i, prom] for i in generateLegalMovesForPiece(board, rank, file)]
+                    else:
+                        legalMoves += [[(rank, file), i, None] for i in generateLegalMovesForPiece(board, rank, file)]
     return legalMoves
 
 
@@ -307,3 +316,47 @@ def spotKing(board, isWhite):
             if board[rank][file] is not None:
                 if board[rank][file].isupper() == isWhite and board[rank][file].upper() == 'K':
                     return rank, file
+
+
+def makeMove(board, before, after, AIProm):
+    moveHistory.append([before, after])
+    if after in checkPossibleCastle(board, board[before[0]][before[1]].isupper()):
+        makeCastleMove(board, after[0], after[1])
+    else:
+        if after in checkEnPassant(board, before[0], before[1]):
+            board[before[0]][after[1]] = None
+        piece = board[before[0]][before[1]]
+        board[before[0]][before[1]] = None
+        board[after[0]][after[1]] = piece
+    if AIProm:
+        board[after[0]][after[1]] = AIProm
+
+
+def endTurn(board, before, after, playerisWhite, whitesTurn, AIProm):
+    legalMoves = generateLegalMovesForPiece(board, before[0], before[1])
+    if after in legalMoves:
+        moveHistory.append([before, after])
+        if after in checkPossibleCastle(board, board[before[0]][before[1]].isupper()):
+            makeCastleMove(board, after[0], after[1])
+        else:
+            if after in checkEnPassant(board, before[0], before[1]):
+                board[before[0]][after[1]] = None
+            piece = board[before[0]][before[1]]
+            board[before[0]][before[1]] = None
+            board[after[0]][after[1]] = piece
+        if (not AIProm) and board[after[0]][after[1]].upper() == 'P' and playerisWhite == whitesTurn and (after[0] == 0 or after[0] == 7):
+            if playerisWhite:
+                promotions = ['Q', 'R', 'B', 'N']
+            else:
+                promotions = ['q', 'r', 'b', 'n']
+            promoting = True
+            while promoting:
+                for event in pygame.event.get():
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        board[after[0]][after[1]] = promotions[event.button - 1]
+                        promoting = False
+        if AIProm:
+            board[after[0]][after[1]] = AIProm
+    else:
+        return whitesTurn
+    return not whitesTurn
