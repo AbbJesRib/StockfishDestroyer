@@ -12,3 +12,18 @@ pieceImages = {
     'Q': './pieces/whiteQueen.png',
     'R': './pieces/whiteRook.png',
 }
+
+pieceValue = {
+    'b': -300,
+    'k': 0,
+    'n': -300,
+    'p': -100,
+    'q': -900,
+    'r': -500,
+    'B': 300,
+    'K': 0,
+    'N': 300,
+    'P': 100,
+    'Q': 900,
+    'R': 500,
+}

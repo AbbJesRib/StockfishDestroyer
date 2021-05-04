@@ -1,13 +1,11 @@
 import pygame
 from pieceData import pieceImages
 from chessRules import moveHistory, checkEnPassant, checkPossibleCastle, generateLegalMovesForColor, generateLegalMovesForPiece, makeCastleMove, spotKing
-
-startingFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+from chessAI import makeRandomMove, evaluateBoard
 
 TILESIZE = 95
 BOARD_POS = (580, 160)
 
-boardHistory = [startingFen]
 
 def create_board_surf():
     board_surf = pygame.Surface((TILESIZE * 8, TILESIZE * 8))
@@ -125,6 +123,8 @@ def main():
         pygame.display.flip()
     font = pygame.font.SysFont('', 32)
     board = create_board()
+    startingFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+    boardHistory = [startingFen]
     loadFromFEN(startingFen, board)
     board_surf = create_board_surf()
     clock = pygame.time.Clock()
@@ -159,24 +159,36 @@ def main():
                                 board[old_y][old_x] = None
                                 new_y, new_x = drop_pos
                                 board[new_y][new_x] = piece
-                                moveHistory.append([(old_y, old_x), (new_y, new_x)])
+                            moveHistory.append([(selected_piece[2], selected_piece[1]), (drop_pos[0], drop_pos[1])])
                             boardHistory.append(loadFENFromBoard(board))
                             whitesTurn = not whitesTurn
                 selected_piece = None
                 drop_pos = None
-                if len(generateLegalMovesForColor(board, whitesTurn)) == 0:
-                    gameEnd = True
-                    if spotKing(board, whitesTurn) in generateLegalMovesForColor(board, not whitesTurn):
-                        endText = font.render('Checkmate! Black has won!' if whitesTurn else 'Checkmate! White has won!', True,
-                                              'black')
-                    else:
-                        endText = font.render("Stalemate! It's a draw!", True, 'black')
-                    textRect = endText.get_rect()
-                    textRect.center = (1920 // 2, 1000 // 2)
-                    screen.blit(endText, textRect)
-                if boardHistory.count(boardHistory[-1]) == 3:
-                    gameEnd = True
+        if len(generateLegalMovesForColor(board, whitesTurn)) == 0:
+            gameEnd = True
+            kingPos = spotKing(board, whitesTurn)
+            inCheck = False
+            if len([i for i in generateLegalMovesForColor(board, not whitesTurn) if i[1] == kingPos]):
+                inCheck = True
+            if not inCheck:
+                endText = font.render("Stalemate! It's a draw!", True, 'black')
+            else:
+                endText = font.render(
+                    'Checkmate! Black has won!' if whitesTurn else 'Checkmate! White has won!', True,
+                    'black')
+            textRect = endText.get_rect()
+            textRect.center = (1920 // 2, 1000 // 2)
+            screen.blit(endText, textRect)
+        if boardHistory.count(boardHistory[-1]) == 3:
+            gameEnd = True
 
+        if whitesTurn != playerisWhite and not gameEnd:
+            print(evaluateBoard(board))
+            before, after = makeRandomMove(board, whitesTurn)
+            piece = board[before[0]][before[1]]
+            board[before[0]][before[1]] = None
+            board[after[0]][after[1]] = piece
+            whitesTurn = not whitesTurn
         screen.fill(pygame.Color('black'))
         screen.blit(board_surf, BOARD_POS)
         draw_pieces(screen, board, selected_piece)

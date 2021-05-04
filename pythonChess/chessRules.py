@@ -297,7 +297,7 @@ def generateLegalMovesForColor(board, isWhite):
         for file in range(8):
             if board[rank][file] is not None:
                 if board[rank][file].isupper() == isWhite:
-                    legalMoves += generateLegalMovesForPiece(board, rank, file)
+                    legalMoves += [[(rank, file), i] for i in generateLegalMovesForPiece(board, rank, file)]
     return legalMoves
 
 
