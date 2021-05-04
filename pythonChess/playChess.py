@@ -107,8 +107,23 @@ def loadFENFromBoard(board):
 
 def main():
     pygame.init()
-    font = pygame.font.SysFont('', 32)
     screen = pygame.display.set_mode((1920, 1000))
+    onStartScreen = True
+    playerisWhite = True
+    while onStartScreen:
+        screen.fill((0, 0, 0))
+        myfont = pygame.font.SysFont("Britannic Bold", 40)
+        text1 = myfont.render("Left click for white", 1, (255, 0, 0))
+        text2 = myfont.render("Right click for black", 1, (255, 0, 0))
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 3:
+                    playerisWhite = False
+                onStartScreen = False
+        screen.blit(text1, (200, 200))
+        screen.blit(text2, (200, 300))
+        pygame.display.flip()
+    font = pygame.font.SysFont('', 32)
     board = create_board()
     loadFromFEN(startingFen, board)
     board_surf = create_board_surf()
@@ -117,6 +132,7 @@ def main():
     drop_pos = None
     whitesTurn = True
     gameEnd = False
+
     while True:
         events = pygame.event.get()
         piece, x, y = get_square_under_mouse(board)
