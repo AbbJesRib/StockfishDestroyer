@@ -3,25 +3,53 @@ import pygame
 moveHistory = []
 
 
+def Square(square):
+    rank, file = square
+    letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+    return f"{letters[file]}{8-rank}"
+
+
+def loadFENFromBoard(board):
+    fen = ''
+    for rank in range(8):
+        spaceBetween = 0
+        for file in range(8):
+            if board[rank][file] is not None:
+                if spaceBetween != 0:
+                    fen += str(spaceBetween)
+                    spaceBetween = 0
+                fen += board[rank][file]
+            else:
+                spaceBetween += 1
+        if spaceBetween != 0:
+            fen += str(spaceBetween)
+        fen += '/'
+    fen = fen[:-1]
+    return fen
+
+
 def checkPossibleCastle(board, isWhite):
     possibleCastles = []
     rank = 7 * int(isWhite)
+    if not isWhite:
+        return possibleCastles
     if not any((rank, 4) in move for move in moveHistory) and board[rank][4] in ['K', 'k']:
         if not seeCheck(board, (rank, 4), (rank, 4), False):
             for i in range(2):
                 if not any((rank, 7 * i) in move for move in moveHistory):
-                    kingSquare = spotKing(board, isWhite)
                     if i:
-                        squareRange = range(kingSquare[1]+1, 7)
+                        squareRange = range(5, 7)
                     else:
-                        squareRange = range(1, kingSquare[1])
+                        squareRange = range(1, 4)
                     occupied = False
                     for j in squareRange:
                         if board[rank][j] is not None or seeCheck(board, (rank, 4), (rank, j), False):
                             occupied = True
                             break
                     if not occupied:
+                        print(f"{(rank, 7*i)} should be in the list below")
                         possibleCastles.append((rank, 7 * i))
+    print(possibleCastles)
     return possibleCastles
 
 
@@ -40,8 +68,8 @@ def makeCastleMove(board, rank, file):
 
 def checkEnPassant(board, rank, file):
     isWhite = board[rank][file].isupper()
-    legalEnPassants = [(rank + 1*(-1)**int(isWhite), i) for i in range(file-1, file+2, 2) if i in range(0, 8) and moveHistory[-1] == [(rank + 2*(-1)**int(isWhite), i), (rank, i)]]
-    legalEnPassants = [i for i in legalEnPassants if not seeCheck(board, (rank, file), i, True)]
+    legalEnPassants = [(rank + 1*(-1)**int(isWhite), i) for i in range(file-1, file+2, 2) if i in range(0, 8)]
+    legalEnPassants = [i for i in legalEnPassants if moveHistory[-1] == [(rank + 2*(-1)**int(isWhite), i), (rank, i)] and not seeCheck(board, (rank, file), i, True)]
     return legalEnPassants
 
 
@@ -318,29 +346,41 @@ def spotKing(board, isWhite):
                     return rank, file
 
 
-def makeMove(board, before, after, AIProm):
-    moveHistory.append([before, after])
-    if after in checkPossibleCastle(board, board[before[0]][before[1]].isupper()):
-        makeCastleMove(board, after[0], after[1])
-    else:
-        if after in checkEnPassant(board, before[0], before[1]):
-            board[before[0]][after[1]] = None
-        piece = board[before[0]][before[1]]
-        board[before[0]][before[1]] = None
-        board[after[0]][after[1]] = piece
+def makeMove(board, before, after, AIProm, movesMade):
+    movesMade.append([before, after])
+    if board[before[0]][before[1]]:
+        if after in checkPossibleCastle(board, board[before[0]][before[1]].isupper()):
+            makeCastleMove(board, after[0], after[1])
+        else:
+            try:
+                if after in checkEnPassant(board, before[0], before[1]):
+                    board[before[0]][after[1]] = None
+            except IndexError:
+                pass
+            piece = board[before[0]][before[1]]
+            board[before[0]][before[1]] = None
+            board[after[0]][after[1]] = piece
     if AIProm:
         board[after[0]][after[1]] = AIProm
 
 
-def endTurn(board, before, after, playerisWhite, whitesTurn, AIProm):
+def endTurn(board, before, after, playerisWhite, whitesTurn, AIProm, boardHistory):
     legalMoves = generateLegalMovesForPiece(board, before[0], before[1])
     if after in legalMoves:
         moveHistory.append([before, after])
-        if after in checkPossibleCastle(board, board[before[0]][before[1]].isupper()):
+        # print(Square(before), Square(after))
+        print(after)
+        print(checkPossibleCastle(board, whitesTurn))
+        print(after in checkPossibleCastle(board, whitesTurn))
+        if after in checkPossibleCastle(board, whitesTurn):
+            print("you can castle")
             makeCastleMove(board, after[0], after[1])
         else:
-            if after in checkEnPassant(board, before[0], before[1]):
-                board[before[0]][after[1]] = None
+            try:
+                if after in checkEnPassant(board, before[0], before[1]):
+                    board[before[0]][after[1]] = None
+            except IndexError:
+                pass
             piece = board[before[0]][before[1]]
             board[before[0]][before[1]] = None
             board[after[0]][after[1]] = piece
@@ -353,10 +393,14 @@ def endTurn(board, before, after, playerisWhite, whitesTurn, AIProm):
             while promoting:
                 for event in pygame.event.get():
                     if event.type == pygame.MOUSEBUTTONDOWN:
-                        board[after[0]][after[1]] = promotions[event.button - 1]
-                        promoting = False
+                        try:
+                            board[after[0]][after[1]] = promotions[event.button - 1]
+                            promoting = False
+                        except IndexError:
+                            pass
         if AIProm:
             board[after[0]][after[1]] = AIProm
     else:
         return whitesTurn
+    boardHistory.append(loadFENFromBoard(board))
     return not whitesTurn

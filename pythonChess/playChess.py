@@ -1,11 +1,17 @@
 import pygame
 from pieceData import pieceImages
-from chessRules import generateLegalMovesForColor, spotKing, endTurn
-from chessAI import makeRandomMove, search
+from chessRules import generateLegalMovesForColor, spotKing, endTurn, moveHistory
+from chessAI import search, minimax, alphaBetaPruning, evaluate
 
 
 TILESIZE = 95
 BOARD_POS = (580, 160)
+
+
+def Square(square):
+    rank, file = square
+    letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+    return f"{letters[file]}{8-rank}"
 
 
 def create_board_surf():
@@ -137,6 +143,26 @@ def main():
     while True:
         events = pygame.event.get()
         piece, x, y = get_square_under_mouse(board)
+        if not gameEnd:
+            # if len(generateLegalMovesForColor(board, whitesTurn)) == 0:
+            #     gameEnd = True
+            #     kingPos = spotKing(board, whitesTurn)
+            #     inCheck = False
+            #     if len([i for i in generateLegalMovesForColor(board, not whitesTurn) if i[1] == kingPos]):
+            #         inCheck = True
+            #     if not inCheck:
+            #         print("Stalemate! It's a draw!")
+            #     else:
+            #         print("Checkmate! Black has won!" if whitesTurn else "Checkmate! White has won!")
+            if boardHistory.count(boardHistory[-1]) == 3:
+                print("It's a draw by repetition!")
+                gameEnd = True
+
+            if whitesTurn != playerisWhite and not gameEnd:
+                # print(search(board, 2, not playerisWhite, float('-inf'), float('inf'), playerisWhite))
+                move = search(board, 1, not playerisWhite, moveHistory)
+                whitesTurn = endTurn(board, move[0], move[1], not playerisWhite, whitesTurn, move[2], boardHistory)
+
         for e in events:
             if e.type == pygame.QUIT:
                 return
@@ -146,39 +172,18 @@ def main():
             if e.type == pygame.MOUSEBUTTONUP:
                 if drop_pos:
                     if selected_piece[0].isupper() == whitesTurn:
-                        whitesTurn = endTurn(board, (selected_piece[2], selected_piece[1]), drop_pos, playerisWhite, whitesTurn, None)
+                        # print(evaluate(board, not playerisWhite))
+                        whitesTurn = endTurn(board, (selected_piece[2], selected_piece[1]), drop_pos, playerisWhite, whitesTurn, None, boardHistory)
+                        # print(evaluate(board, playerisWhite))
                 selected_piece = None
                 drop_pos = None
 
-        if len(generateLegalMovesForColor(board, whitesTurn)) == 0:
-            gameEnd = True
-            kingPos = spotKing(board, whitesTurn)
-            inCheck = False
-            if len([i for i in generateLegalMovesForColor(board, not whitesTurn) if i[1] == kingPos]):
-                inCheck = True
-            if not inCheck:
-                endText = font.render("Stalemate! It's a draw!", True, 'black')
-            else:
-                endText = font.render(
-                    'Checkmate! Black has won!' if whitesTurn else 'Checkmate! White has won!', True,
-                    'black')
-            textRect = endText.get_rect()
-            textRect.center = (1920 // 2, 1000 // 2)
-            screen.blit(endText, textRect)
-        if boardHistory.count(boardHistory[-1]) == 3:
-            gameEnd = True
-
-        if whitesTurn != playerisWhite and not gameEnd:
-            print(search(board, 3, not playerisWhite, float('-inf'), float('inf')))
-            before, after, AIProm = makeRandomMove(board, whitesTurn)
-            whitesTurn = endTurn(board, before, after, not playerisWhite, whitesTurn, AIProm)
         screen.fill(pygame.Color('black'))
         screen.blit(board_surf, BOARD_POS)
         draw_pieces(screen, board, selected_piece)
         if not gameEnd:
             draw_selector(screen, piece, x, y)
             drop_pos = draw_drag(screen, board, selected_piece)
-
         if x is not None:
             rect = (BOARD_POS[0] + x * TILESIZE, BOARD_POS[1] + y * TILESIZE, TILESIZE, TILESIZE)
             pygame.draw.rect(screen, (255, 0, 0, 50), rect, 2)
